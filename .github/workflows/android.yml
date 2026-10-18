@@ -65,6 +65,12 @@ jobs:
             chmod +x android/gradlew
           fi
 
+      # Current Flutter stable requires Gradle >= 8.14; the project pins 8.12.
+      - name: Upgrade Gradle wrapper to 8.14.3
+        run: |
+          sed -i 's#gradle-[0-9.]*-\(bin\|all\)\.zip#gradle-8.14.3-bin.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
+
       # If keystore secrets exist, sign with them (build.gradle.kts reads android/key.properties).
       - name: Set up release signing (optional)
         env:
