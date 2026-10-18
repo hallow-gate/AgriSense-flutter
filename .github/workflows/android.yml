@@ -1,16 +1,3 @@
-# Builds AgriSense for Android on GitHub.
-# Put this file at:  .github/workflows/android.yml   (replaces the old one)
-#
-# Run it:  GitHub repo > Actions > "Android build" > Run workflow
-# (it also runs on every push to main, and on tags like v2.1.0 which creates a Release)
-#
-# Optional settings (Settings > Secrets and variables > Actions):
-#   Variables:  API_URL, TURNSTILE_SITE_KEY, TURNSTILE_BASE_URL
-#   Secrets (only if you want a properly signed release; otherwise debug-signed):
-#     ANDROID_KEYSTORE_BASE64   -> base64 of your .jks   (base64 -w0 upload.jks)
-#     ANDROID_KEYSTORE_PASSWORD
-#     ANDROID_KEY_ALIAS
-#     ANDROID_KEY_PASSWORD
 name: Android build
 
 on:
@@ -25,7 +12,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write   # needed to attach files to a Release on tag builds
+  contents: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -53,7 +40,6 @@ jobs:
           channel: stable
           cache: true
 
-      # The repo has no gradlew / wrapper jar, so borrow them from a throwaway project.
       - name: Add Gradle wrapper if missing
         run: |
           if [ ! -f android/gradlew ] || [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
@@ -65,16 +51,14 @@ jobs:
             chmod +x android/gradlew
           fi
 
-      # Current Flutter stable needs Gradle >= 8.14 and Android Gradle Plugin >= 8.11.1;
-      # the project pins older versions, so bump them here.
-      - name: Upgrade Gradle wrapper and Android Gradle Plugin
+      - name: Upgrade Gradle, Android Gradle Plugin and Kotlin
         run: |
           sed -i 's#gradle-[0-9.]*-\(bin\|all\)\.zip#gradle-8.14.3-bin.zip#' android/gradle/wrapper/gradle-wrapper.properties
           sed -i 's#\(id("com.android.application") version "\)[0-9.]*"#\18.11.1"#' android/settings.gradle.kts
+          sed -i 's#\(id("org.jetbrains.kotlin.android") version "\)[0-9.]*"#\12.2.20"#' android/settings.gradle.kts
           grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
-          grep 'com.android.application' android/settings.gradle.kts
+          grep -E 'com.android.application|kotlin.android' android/settings.gradle.kts
 
-      # If keystore secrets exist, sign with them (build.gradle.kts reads android/key.properties).
       - name: Set up release signing (optional)
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -92,7 +76,7 @@ jobs:
             } > android/key.properties
             echo "Signing with your release keystore."
           else
-            echo "No keystore secrets set - APK will be debug-signed (fine for installing on your own phone)."
+            echo "No keystore secrets set - APK will be debug-signed."
           fi
 
       - run: flutter pub get
