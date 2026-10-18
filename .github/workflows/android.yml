@@ -1,0 +1,130 @@
+# Builds AgriSense for Android on GitHub.
+# Put this file at:  .github/workflows/android.yml   (replaces the old one)
+#
+# Run it:  GitHub repo > Actions > "Android build" > Run workflow
+# (it also runs on every push to main, and on tags like v2.1.0 which creates a Release)
+#
+# Optional settings (Settings > Secrets and variables > Actions):
+#   Variables:  API_URL, TURNSTILE_SITE_KEY, TURNSTILE_BASE_URL
+#   Secrets (only if you want a properly signed release; otherwise debug-signed):
+#     ANDROID_KEYSTORE_BASE64   -> base64 of your .jks   (base64 -w0 upload.jks)
+#     ANDROID_KEYSTORE_PASSWORD
+#     ANDROID_KEY_ALIAS
+#     ANDROID_KEY_PASSWORD
+name: Android build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_aab:
+        description: "Also build the Play Store bundle (.aab)"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: write   # needed to attach files to a Release on tag builds
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  API_URL: ${{ vars.API_URL || 'https://agrisense-3emj.onrender.com' }}
+  TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY || '0x4AAAAAAFPyh2X1GS8e-smM' }}
+  TURNSTILE_BASE_URL: ${{ vars.TURNSTILE_BASE_URL || 'https://agrisense-1-0.onrender.com' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # The repo has no gradlew / wrapper jar, so borrow them from a throwaway project.
+      - name: Add Gradle wrapper if missing
+        run: |
+          if [ ! -f android/gradlew ] || [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            T=$(mktemp -d)
+            (cd "$T" && flutter create --platforms=android --project-name wrapper_src wrapper_src >/dev/null)
+            cp "$T/wrapper_src/android/gradlew" "$T/wrapper_src/android/gradlew.bat" android/
+            mkdir -p android/gradle/wrapper
+            cp "$T/wrapper_src/android/gradle/wrapper/gradle-wrapper.jar" android/gradle/wrapper/
+            chmod +x android/gradlew
+          fi
+
+      # If keystore secrets exist, sign with them (build.gradle.kts reads android/key.properties).
+      - name: Set up release signing (optional)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "storeFile=$RUNNER_TEMP/release.jks"
+              echo "storePassword=$KS_PASS"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASS"
+            } > android/key.properties
+            echo "Signing with your release keystore."
+          else
+            echo "No keystore secrets set - APK will be debug-signed (fine for installing on your own phone)."
+          fi
+
+      - run: flutter pub get
+
+      - name: Analyze (informational)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --build-number=${{ github.run_number }} \
+            --dart-define=API_URL=$API_URL \
+            --dart-define=TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY \
+            --dart-define=TURNSTILE_BASE_URL=$TURNSTILE_BASE_URL
+
+      - name: Build App Bundle
+        if: ${{ inputs.build_aab || startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          flutter build appbundle --release \
+            --build-number=${{ github.run_number }} \
+            --dart-define=API_URL=$API_URL \
+            --dart-define=TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY \
+            --dart-define=TURNSTILE_BASE_URL=$TURNSTILE_BASE_URL
+
+      - name: Rename outputs
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/agrisense-${{ github.run_number }}.apk
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
+            cp build/app/outputs/bundle/release/app-release.aab dist/agrisense-${{ github.run_number }}.aab
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agrisense-android
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release (tag builds)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
