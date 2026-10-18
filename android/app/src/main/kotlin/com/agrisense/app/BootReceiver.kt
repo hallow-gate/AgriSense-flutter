@@ -10,11 +10,11 @@ class BootReceiver : BroadcastReceiver() {
         if (a != Intent.ACTION_BOOT_COMPLETED && a != Intent.ACTION_MY_PACKAGE_REPLACED) return
         try {
             AgriWidgetProvider.updateAll(context)
-            if (AgriWidgetProvider.count(context) > 0) {
+            if (AgriWidgetProvider.count(context) > 0 || Notify.enabled(context)) {
                 RefreshWorker.schedulePeriodic(context)
                 RefreshWorker.enqueueOnce(context)
             }
-            if (Live.enabled(context)) LiveService.start(context)
+            if (Live.enabled(context) || Notify.instantActive(context)) LiveService.start(context)
         } catch (e: Exception) {
             // ignore
         }

@@ -17,6 +17,7 @@ class RefreshWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, params
         try {
             Net.fetchAndStore(applicationContext)
             Updater.onChanged(applicationContext)
+            EventNotifier.run(applicationContext)
         } catch (e: Exception) {
             return Result.retry()
         }

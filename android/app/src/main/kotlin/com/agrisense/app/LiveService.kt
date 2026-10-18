@@ -27,14 +27,18 @@ class LiveService : Service() {
 
     private val tick = object : Runnable {
         override fun run() {
-            if (!running || !screenOn) return
+            val instant = Notify.instantActive(this@LiveService)
+            if (!running || (!screenOn && !instant)) return
             try {
                 Net.fetchAndStore(this@LiveService)
                 Updater.onChanged(this@LiveService)
+                EventNotifier.run(this@LiveService)
             } catch (e: Exception) {
                 // keep polling
             }
-            handler?.postDelayed(this, Live.intervalSec(this@LiveService) * 1000L)
+            // screen off: be gentler on the battery, but keep watching for events
+            val sec = Live.intervalSec(this@LiveService).let { if (screenOn) it else maxOf(it, 15) }
+            handler?.postDelayed(this, sec * 1000L)
         }
     }
 
@@ -49,7 +53,7 @@ class LiveService : Service() {
                 }
                 Intent.ACTION_SCREEN_OFF -> {
                     screenOn = false
-                    h.removeCallbacks(tick)
+                    if (!Notify.instantActive(this@LiveService)) h.removeCallbacks(tick)
                 }
             }
         }
@@ -68,6 +72,7 @@ class LiveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             Live.set(this, false, Live.intervalSec(this))
+            Notify.setInstant(this, false)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -99,7 +104,7 @@ class LiveService : Service() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         screenOn = pm.isInteractive
         handler?.removeCallbacks(tick)
-        if (screenOn) handler?.post(tick)
+        if (screenOn || Notify.instantActive(this)) handler?.post(tick)
         return START_STICKY
     }
 

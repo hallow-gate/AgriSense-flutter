@@ -22,6 +22,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   final st = StatusStore.i;
   bool lock = false, bio = false;
   bool live = false;
+  bool notify = false, notifyOnlyProblems = false, notifyInstant = false;
   int interval = 10;
   int widgets = 0;
   String widgetMsg = '';
@@ -42,12 +43,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
     final l = await lockEnabled();
     final b = await biometricsAvailable();
     final lv = await Native.getLive();
+    final nt = await Native.getNotify();
     final n = await Native.widgetCount();
     if (!mounted) return;
     setState(() {
       lock = l;
       bio = b;
       live = lv.enabled;
+      notify = nt.enabled;
+      notifyOnlyProblems = nt.onlyProblems;
+      notifyInstant = nt.instant;
       interval = lv.intervalSec;
       widgets = n;
     });
@@ -57,6 +62,76 @@ class _DeviceScreenState extends State<DeviceScreen> {
     if (on) await Native.requestNotificationPermission();
     await Native.setLive(on, interval);
     if (mounted) setState(() => live = on);
+  }
+
+  Future<void> _setNotify(bool on) async {
+    if (on) await Native.requestNotificationPermission();
+    await Native.setNotify(on, notifyOnlyProblems, notifyInstant);
+    if (mounted) setState(() => notify = on);
+  }
+
+  Future<void> _setOnlyProblems(bool v) async {
+    await Native.setNotify(notify, v, notifyInstant);
+    if (mounted) setState(() => notifyOnlyProblems = v);
+  }
+
+  Future<void> _setInstant(bool v) async {
+    await Native.setNotify(notify, notifyOnlyProblems, v);
+    if (mounted) setState(() => notifyInstant = v);
+  }
+
+  Widget _notifyCard() {
+    return Clay(
+      radius: 28,
+      padding: const EdgeInsets.all(18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                T('Notify me about new events', s: 15, f: 'bold'),
+                T('Get a notification when the system waters, moves the cover, refuses an action, goes offline or reports a sensor fault.', s: 12.5, c: C.mute, f: 'reg'),
+              ]),
+            ),
+          ),
+          ClayToggle(value: notify, onChanged: _setNotify),
+        ]),
+        if (notify) ...[
+          const Div(),
+          Row(children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  T('Problems only', s: 15, f: 'bold'),
+                  T('Skip routine watering and cover moves.', s: 12.5, c: C.mute, f: 'reg'),
+                ]),
+              ),
+            ),
+            ClayToggle(value: notifyOnlyProblems, onChanged: _setOnlyProblems),
+          ]),
+          const Div(),
+          Row(children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  T('Instant alerts', s: 15, f: 'bold'),
+                  T('Keeps watching every few seconds, even with the screen off, so you hear about events within seconds. Shows a small always-on notification and uses more battery.', s: 12.5, c: C.mute, f: 'reg'),
+                ]),
+              ),
+            ),
+            ClayToggle(value: notifyInstant, onChanged: _setInstant),
+          ]),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: T(notifyInstant ? 'If alerts still arrive late, set battery use for AgriSense to Unrestricted in your phone\'s battery settings.' : 'Without Instant alerts, new events are checked about every 15 minutes in the background.', s: 12, c: C.faint, f: 'reg'),
+          ),
+          if (notifyInstant) ...[const Gap(10), ClayButton(kind: BtnKind.soft, icon: 'bolt', label: 'Battery settings', onPressed: Native.openBatterySettings)],
+        ],
+      ]),
+    );
   }
 
   Future<void> _setInterval(int s) async {
@@ -137,6 +212,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ]),
             ),
             if (Native.supported) ...[
+              const Gap(22),
+              const Label('Notifications'),
+              _notifyCard(),
               const Gap(22),
               const Label('Home & lock screen widget'),
               _widgetCard(),

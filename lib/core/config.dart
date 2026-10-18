@@ -4,7 +4,7 @@ class Cfg {
   /// Your AgriSense server (the Render service), no trailing slash.
   static const String apiUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'https://your-agrisense-server.onrender.com',
+    defaultValue: 'https://agrisense-3emj.onrender.com',
   );
 
   /// Cloudflare Turnstile site key (public by design).

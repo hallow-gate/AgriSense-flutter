@@ -63,6 +63,30 @@ object Net {
         }
     }
 
+    /** Authenticated GET of any API path. Returns the body on success, null otherwise. Call from a background thread. */
+    fun getAuthed(ctx: Context, path: String): String? {
+        val app = ctx.applicationContext
+        val base = Store.baseUrl(app)
+        var session = Store.session(app) ?: return null
+        if (base.isEmpty()) return null
+        if (session.optLong("expires_at", 0L) - System.currentTimeMillis() / 1000 < 60) {
+            if (refresh(app, session.optString("access_token")) != OK) return null
+            session = Store.session(app) ?: return null
+        }
+        return try {
+            var token = session.optString("access_token")
+            var resp = request("$base$path", "GET", token, null)
+            if (resp.code == 401) {
+                if (refresh(app, token) != OK) return null
+                token = (Store.session(app) ?: return null).optString("access_token")
+                resp = request("$base$path", "GET", token, null)
+            }
+            if (resp.code in 200..299) resp.body else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun fail(ctx: Context, err: String): Snapshot {
         val last = Snapshots.load(ctx) ?: Snapshots.empty()
         val s = last.copy(error = err)

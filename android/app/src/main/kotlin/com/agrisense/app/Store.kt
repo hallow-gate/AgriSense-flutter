@@ -82,6 +82,28 @@ object Live {
     }
 }
 
+/** Notification settings for new system events. */
+object Notify {
+    fun enabled(ctx: Context): Boolean = Store.plain(ctx).getBoolean("notify_enabled", false)
+    fun onlyProblems(ctx: Context): Boolean = Store.plain(ctx).getBoolean("notify_only_problems", false)
+    /** "Instant alerts": keep watching even with the screen off (uses the foreground service). */
+    fun instant(ctx: Context): Boolean = Store.plain(ctx).getBoolean("notify_instant", false)
+    fun instantActive(ctx: Context): Boolean = enabled(ctx) && instant(ctx)
+    fun setInstant(ctx: Context, v: Boolean) {
+        Store.plain(ctx).edit().putBoolean("notify_instant", v).apply()
+    }
+
+    fun set(ctx: Context, on: Boolean, onlyProblems: Boolean, inst: Boolean) {
+        val p = Store.plain(ctx)
+        val e = p.edit()
+        if (on && !enabled(ctx)) {
+            // turning on: forget old state so history is not announced
+            e.remove("ev_seen").remove("ev_dev_state").remove("ev_soil_fault")
+        }
+        e.putBoolean("notify_enabled", on).putBoolean("notify_only_problems", onlyProblems).putBoolean("notify_instant", inst).apply()
+    }
+}
+
 data class WidgetConfig(
     val temp: Boolean = true,
     val hum: Boolean = true,

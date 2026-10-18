@@ -95,11 +95,32 @@ class MainActivity : FlutterFragmentActivity() {
                 val enabled = (m?.get("enabled") as? Boolean) ?: false
                 val sec = (m?.get("intervalSec") as? Number)?.toInt() ?: Live.intervalSec(this)
                 Live.set(this, enabled, sec)
-                if (enabled) LiveService.start(this) else LiveService.stop(this)
+                if (enabled || Notify.instantActive(this)) LiveService.start(this) else LiveService.stop(this)
                 result.success(null)
             }
             "getLive" -> {
                 result.success(mapOf("enabled" to Live.enabled(this), "intervalSec" to Live.intervalSec(this)))
+            }
+            "setNotify" -> {
+                val m = call.arguments as? Map<*, *>
+                val enabled = (m?.get("enabled") as? Boolean) ?: false
+                val only = (m?.get("onlyProblems") as? Boolean) ?: false
+                val instant = (m?.get("instant") as? Boolean) ?: false
+                Notify.set(this, enabled, only, instant)
+                if (enabled && instant) LiveService.start(this)
+                else if (!Live.enabled(this)) LiveService.stop(this)
+                if (enabled) {
+                    RefreshWorker.schedulePeriodic(this)
+                    RefreshWorker.enqueueOnce(this)
+                } else if (AgriWidgetProvider.count(this) == 0) {
+                    RefreshWorker.cancelPeriodic(this)
+                }
+                result.success(null)
+            }
+            "getNotify" -> {
+                // self-heal: restart the watcher if instant alerts are on but the service was stopped (e.g. after sign-out)
+                if (Notify.instantActive(this) && !LiveService.running) LiveService.start(this)
+                result.success(mapOf("enabled" to Notify.enabled(this), "onlyProblems" to Notify.onlyProblems(this), "instant" to Notify.instant(this)))
             }
             "widgetCount" -> result.success(AgriWidgetProvider.count(this))
             "requestPinWidget" -> {

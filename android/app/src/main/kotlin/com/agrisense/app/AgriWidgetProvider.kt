@@ -29,7 +29,7 @@ class AgriWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
-        RefreshWorker.cancelPeriodic(context)
+        if (!Notify.enabled(context)) RefreshWorker.cancelPeriodic(context)
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {

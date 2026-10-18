@@ -71,6 +71,16 @@ class Native {
   static Future<void> setLive(bool enabled, int intervalSec) =>
       _call<void>('setLive', {'enabled': enabled, 'intervalSec': intervalSec});
 
+  // ---- event notifications ----
+  static Future<({bool enabled, bool onlyProblems, bool instant})> getNotify() async {
+    final m = await _call<Map<dynamic, dynamic>>('getNotify');
+    if (m == null) return (enabled: false, onlyProblems: false, instant: false);
+    return (enabled: m['enabled'] == true, onlyProblems: m['onlyProblems'] == true, instant: m['instant'] == true);
+  }
+
+  static Future<void> setNotify(bool enabled, bool onlyProblems, bool instant) =>
+      _call<void>('setNotify', {'enabled': enabled, 'onlyProblems': onlyProblems, 'instant': instant});
+
   static Future<bool> requestNotificationPermission() async =>
       (await _call<bool>('requestNotificationPermission')) ?? true;
 

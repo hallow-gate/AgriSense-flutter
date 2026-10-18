@@ -17,7 +17,7 @@ workflows:
       android_signing:
         - agrisense_keystore
       vars:
-        API_URL: "https://your-agrisense-server.onrender.com"
+        API_URL: "https://agrisense-3emj.onrender.com"
         TURNSTILE_SITE_KEY: "0x4AAAAAAFPyh2X1GS8e-smM"
         TURNSTILE_BASE_URL: "https://agrisense-1-0.onrender.com"
     scripts:

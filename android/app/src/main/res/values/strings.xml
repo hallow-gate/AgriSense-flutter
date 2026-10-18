@@ -12,4 +12,8 @@
     <string name="live_channel_desc">Keeps the AgriSense widget updating in real time</string>
     <string name="live_title">AgriSense live</string>
     <string name="live_stop">Stop</string>
+    <string name="events_channel_name">System events</string>
+    <string name="events_channel_desc">Watering and cover activity from your garden system</string>
+    <string name="alerts_channel_name">Problems and alerts</string>
+    <string name="alerts_channel_desc">Refused actions, device offline and sensor faults</string>
 </resources>
