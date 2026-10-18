@@ -1,0 +1,37 @@
+name: agrisense
+description: AgriSense - plant watering and shade system (Flutter port with Android home/lock-screen widget).
+publish_to: "none"
+version: 2.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  flutter_svg: ^2.0.10+1
+  webview_flutter: ^4.10.0
+  local_auth: ^2.3.0
+  video_player: ^2.9.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Nunito_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito_800ExtraBold.ttf
+          weight: 800

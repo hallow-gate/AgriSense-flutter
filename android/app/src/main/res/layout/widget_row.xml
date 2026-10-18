@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
+<ImageView android:id="@+id/bg" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" android:src="@drawable/bg_light" android:contentDescription="@null" />
+<LinearLayout android:id="@+id/content" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:padding="6dp">
+<LinearLayout android:id="@+id/cell_temp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" >
+  <ImageView android:id="@+id/ic_temp" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_temp" android:contentDescription="@null" />
+  <TextView android:id="@+id/val_temp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="–" android:textSize="22sp" android:textColor="#2A3320" android:maxLines="1" android:gravity="center" />
+  <TextView android:id="@+id/lbl_temp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lbl_temp" android:textSize="10sp" android:textColor="#7D8869" android:maxLines="1" android:gravity="center" />
+</LinearLayout>
+<LinearLayout android:id="@+id/cell_hum" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" >
+  <ImageView android:id="@+id/ic_hum" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_hum" android:contentDescription="@null" />
+  <TextView android:id="@+id/val_hum" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="–" android:textSize="22sp" android:textColor="#2A3320" android:maxLines="1" android:gravity="center" />
+  <TextView android:id="@+id/lbl_hum" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lbl_hum" android:textSize="10sp" android:textColor="#7D8869" android:maxLines="1" android:gravity="center" />
+</LinearLayout>
+<LinearLayout android:id="@+id/cell_soil" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" >
+  <ImageView android:id="@+id/ic_soil" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_soil" android:contentDescription="@null" />
+  <TextView android:id="@+id/val_soil" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="–" android:textSize="22sp" android:textColor="#2A3320" android:maxLines="1" android:gravity="center" />
+  <TextView android:id="@+id/lbl_soil" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lbl_soil" android:textSize="10sp" android:textColor="#7D8869" android:maxLines="1" android:gravity="center" />
+</LinearLayout>
+<LinearLayout android:id="@+id/cell_status" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+  <ImageView android:id="@+id/dot" android:layout_width="8dp" android:layout_height="8dp" android:src="@drawable/dot" android:contentDescription="@null" />
+  <TextView android:id="@+id/val_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Online" android:textSize="14sp" android:textColor="#2A3320" android:maxLines="1" android:gravity="center" android:layout_marginTop="2dp"/>
+  <Chronometer android:id="@+id/age" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textColor="#7D8869" android:maxLines="1" android:gravity="center" />
+</LinearLayout>
+</LinearLayout>
+<ImageButton android:id="@+id/refresh" android:layout_width="22dp" android:layout_height="22dp" android:background="@android:color/transparent" android:src="@drawable/ic_refresh" android:padding="3dp" android:scaleType="fitCenter" android:contentDescription="@string/cd_refresh" android:layout_gravity="top|end"/>
+</FrameLayout>

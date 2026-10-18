@@ -1,0 +1,54 @@
+# Codemagic build for AgriSense (Android APK + AAB).
+#
+# One-time setup in Codemagic:
+#   1. Add this repo as an app, choose "codemagic.yaml" as the configuration.
+#   2. Teams > Code signing identities > Android: upload your keystore and give it the
+#      reference name  agrisense_keystore  (or change it below). Without it the build is
+#      signed with the debug key, which installs fine on your own phone but cannot go on Play.
+#   3. App > Environment variables: set API_URL to your server (e.g. https://my-agrisense.onrender.com).
+workflows:
+  android-release:
+    name: AgriSense Android
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      flutter: stable
+      java: 17
+      android_signing:
+        - agrisense_keystore
+      vars:
+        API_URL: "https://your-agrisense-server.onrender.com"
+        TURNSTILE_SITE_KEY: "0x4AAAAAAFPyh2X1GS8e-smM"
+        TURNSTILE_BASE_URL: "https://agrisense-1-0.onrender.com"
+    scripts:
+      - name: Make sure the Gradle wrapper is present
+        script: |
+          if [ ! -f android/gradlew ] || [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            TMP=$(mktemp -d)
+            (cd "$TMP" && flutter create --platforms=android --project-name wrapper_src wrapper_src >/dev/null)
+            cp "$TMP/wrapper_src/android/gradlew" "$TMP/wrapper_src/android/gradlew.bat" android/
+            mkdir -p android/gradle/wrapper
+            cp "$TMP/wrapper_src/android/gradle/wrapper/gradle-wrapper.jar" android/gradle/wrapper/
+            chmod +x android/gradlew
+          fi
+      - name: Get packages
+        script: flutter pub get
+      - name: Analyze (informational)
+        script: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+      - name: Build APK
+        script: |
+          flutter build apk --release \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --dart-define=API_URL=$API_URL \
+            --dart-define=TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY \
+            --dart-define=TURNSTILE_BASE_URL=$TURNSTILE_BASE_URL
+      - name: Build App Bundle (Play Store)
+        script: |
+          flutter build appbundle --release \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --dart-define=API_URL=$API_URL \
+            --dart-define=TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY \
+            --dart-define=TURNSTILE_BASE_URL=$TURNSTILE_BASE_URL
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab

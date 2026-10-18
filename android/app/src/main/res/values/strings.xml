@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AgriSense</string>
+    <string name="widget_label">AgriSense live</string>
+    <string name="widget_description">Live temperature, humidity, soil moisture and device status. Resize it to any shape.</string>
+    <string name="widget_config_title">AgriSense widget</string>
+    <string name="lbl_temp">Temp</string>
+    <string name="lbl_hum">Humidity</string>
+    <string name="lbl_soil">Soil</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="live_channel_name">Live widget updates</string>
+    <string name="live_channel_desc">Keeps the AgriSense widget updating in real time</string>
+    <string name="live_title">AgriSense live</string>
+    <string name="live_stop">Stop</string>
+</resources>
